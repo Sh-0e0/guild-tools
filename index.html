@@ -1342,8 +1342,11 @@ function totalGrade(g){
 function avgPromotion(snap){
   return (totalGrade(snap.generals[0]) + totalGrade(snap.generals[1]) + totalGrade(snap.generals[2])) / 3;
 }
-function totalLevelOf(snap){
-  return snap.generals.reduce((s, g) => s + (g.level || 0), 0);
+// Per-member value used for the growth graph: the average level across
+// their 3 generals (not the sum) — so the group line is "average of each
+// member's average level", matching how tiers are meant to be compared.
+function avgLevelOf(snap){
+  return snap.generals.reduce((s, g) => s + (g.level || 0), 0) / snap.generals.length;
 }
 function tierOf(avgProm){
   if (avgProm >= 5) return 'high';
@@ -1618,7 +1621,7 @@ function buildGrowthSeries(){
     growthState.members.forEach(member => {
       const snap = snapshotAtOrBefore(member, hourKey);
       if (!snap) return;
-      bucket[tierOf(avgPromotion(snap))].push(totalLevelOf(snap));
+      bucket[tierOf(avgPromotion(snap))].push(avgLevelOf(snap));
     });
     ['high','mid','low'].forEach(t => {
       if (bucket[t].length) series[t].push({ hourKey, value: avg(bucket[t]) });
@@ -1706,7 +1709,7 @@ function renderGrowthChart(){
   }
 
   container.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block; cursor: ns-resize;">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
       ${gridHtml}
       ${xLabelsHtml}
       ${pathAndDots(high, xFor, yFor, '#c9a227')}
@@ -1714,22 +1717,91 @@ function renderGrowthChart(){
       ${pathAndDots(low, xFor, yFor, '#b7402f')}
     </svg>
     <div class="chart-legend">
-      <span class="legend-item"><i style="background:#c9a227"></i>고진급 (평균 레벨 합)</span>
-      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급 (평균 레벨 합)</span>
-      <span class="legend-item"><i style="background:#b7402f"></i>저진급 (평균 레벨 합)</span>
+      <span class="legend-item"><i style="background:#c9a227"></i>고진급 (평균치)</span>
+      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급 (평균치)</span>
+      <span class="legend-item"><i style="background:#b7402f"></i>저진급 (평균치)</span>
       <button class="chart-detail-toggle ${growthChartDetail ? 'on' : ''}" onclick="growthChartToggleDetail()">${growthChartDetail ? '기준선 세밀히 보는 중' : '기준선 세밀히 보기'}</button>
     </div>
   `;
-
-  container.querySelector('svg').addEventListener('wheel', function(e){
-    e.preventDefault();
-    growthChartZoomStep(e.deltaY < 0 ? -1 : 1);
-  }, { passive: false });
 }
 
 function growthChartToggleDetail(){
   growthChartDetail = !growthChartDetail;
   renderGrowthChart();
+}
+
+// ---------- territory distribution (진급별 점령 가능 토지 분포도) ----------
+function buildTerritoryDistribution(){
+  const dist = {};
+  for (let t=3; t<=10; t++) dist[t] = { high: 0, mid: 0, low: 0 };
+  let counted = 0;
+  growthState.members.forEach(m => {
+    const snap = getLatestSnapshot(m);
+    if (!snap) return;
+    const tier = tierOf(avgPromotion(snap));
+    const t = snap.territory;
+    if (dist[t]){ dist[t][tier]++; counted++; }
+  });
+  return { dist, counted };
+}
+
+function renderTerritoryChart(){
+  const container = document.getElementById('territory-chart-area');
+  if (!container) return;
+  const { dist, counted } = buildTerritoryDistribution();
+
+  if (!counted){
+    container.innerHTML = `<div class="empty">아직 쌓인 기록이 없습니다.<br>상세 입력 화면에서 값을 입력하면 분포가 여기 표시돼요.</div>`;
+    return;
+  }
+
+  const levels = [3,4,5,6,7,8,9,10];
+  const maxCount = Math.max(1, ...levels.flatMap(l => [dist[l].high, dist[l].mid, dist[l].low]));
+
+  const W = 800, H = 320, padL = 40, padR = 20, padT = 20, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const step = niceStep(maxCount, 5);
+  const niceMax = Math.max(step, Math.ceil(maxCount / step) * step);
+  const yFor = v => padT + plotH - (v / niceMax) * plotH;
+  const groupW = plotW / levels.length;
+  const barW = groupW / 4;
+
+  let gridHtml = '';
+  for (let v = 0; v <= niceMax + 0.001; v += step){
+    const y = yFor(v);
+    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#232b38" stroke-width="1" />`;
+    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#5c6779">${Math.round(v)}</text>`;
+  }
+
+  let barsHtml = '', xLabelsHtml = '';
+  const tierColors = [['high','#c9a227'], ['mid','#4c8c6b'], ['low','#b7402f']];
+  levels.forEach((lvl, i) => {
+    const groupX = padL + i * groupW;
+    tierColors.forEach(([tier, color], j) => {
+      const count = dist[lvl][tier];
+      const barX = groupX + j * barW + barW * 0.15;
+      const barWidth = barW * 0.7;
+      const barY = yFor(count);
+      const barHeight = (padT + plotH) - barY;
+      if (count > 0){
+        barsHtml += `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${color}" rx="2" />`;
+      }
+    });
+    xLabelsHtml += `<text x="${(groupX+groupW/2).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#5c6779">Lv.${lvl}</text>`;
+  });
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+      ${gridHtml}
+      ${barsHtml}
+      ${xLabelsHtml}
+    </svg>
+    <div class="chart-legend">
+      <span class="legend-item"><i style="background:#c9a227"></i>고진급</span>
+      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급</span>
+      <span class="legend-item"><i style="background:#b7402f"></i>저진급</span>
+    </div>
+  `;
 }
 
 // ---------- shell / render ----------
@@ -1764,6 +1836,7 @@ function growthRenderShell(){
         <button class="view-tab active" data-mode="detail" onclick="setViewMode('detail')">상세 입력</button>
         <button class="view-tab" data-mode="summary" onclick="setViewMode('summary')">간소화 보기</button>
         <button class="view-tab" data-mode="graph" onclick="setViewMode('graph')">성장 그래프</button>
+        <button class="view-tab" data-mode="territory" onclick="setViewMode('territory')">토지 분포</button>
       </div>
       <button class="btn btn-primary" onclick="openAddModal(growthAddMembersBulk)">+ 맹원 등록</button>
     </div>
@@ -1815,17 +1888,28 @@ function growthRenderMemberArea(){
   if (growthState.viewMode === 'graph'){
     area.innerHTML = `
       <div class="chart-card">
-        <p class="chart-note">그룹(고진급·중진급·저진급)별 세 장수 레벨 합계의 시간대 평균 추이입니다. 검색/그룹 필터는 그래프에는 적용되지 않아요.</p>
+        <p class="chart-note">그룹(고진급·중진급·저진급)별, 맹원마다 세 장수 레벨의 평균치를 구한 뒤 그 값을 다시 그룹 내에서 평균낸 시간대별 추이입니다. 검색/그룹 필터는 그래프에는 적용되지 않아요.</p>
         <div class="chart-controls">
           <button class="btn chart-zoom-btn" onclick="growthChartZoomStep(-1)" title="확대">🔍+</button>
           <button class="btn chart-zoom-btn" onclick="growthChartZoomStep(1)" title="축소">🔍−</button>
           <button class="btn" onclick="growthChartResetZoom()">전체 보기</button>
-          <span class="chart-hint">그래프 위에서 마우스 휠로도 확대/축소할 수 있어요</span>
+          <span class="chart-hint">버튼으로 기준선을 확대/축소할 수 있어요</span>
         </div>
         <div id="chart-area"></div>
       </div>
     `;
     renderGrowthChart();
+    return;
+  }
+
+  if (growthState.viewMode === 'territory'){
+    area.innerHTML = `
+      <div class="chart-card">
+        <p class="chart-note">각 맹원의 "점령한 최대 토지 레벨"(가장 최신 기록 기준)을 진급 그룹별로 나눠 분포를 보여줍니다.</p>
+        <div id="territory-chart-area"></div>
+      </div>
+    `;
+    renderTerritoryChart();
     return;
   }
 
