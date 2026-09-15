@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>길드 운영 도구</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+
+  :root{
+    --bg: #10141b;
+    --surface: #1a2029;
+    --surface-2: #212a38;
+    --border: #2b3444;
+    --border-soft: #232b38;
+    --text: #e9edf3;
+    --text-muted: #8b96a8;
+    --text-faint: #5c6779;
+    --accent: #b7402f;
+    --accent-soft: #b7402f33;
+    --gold: #c9a227;
+    --gold-soft: #c9a22733;
+    --full: #4c8c6b;
+    --full-soft: #4c8c6b2e;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 36px 28px 80px;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .title-block h1{
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -0.5px;
+    margin: 0 0 6px;
+    color: #f3e9d6;
+  }
+  .title-block p{
+    margin:0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .stat-row{
+    display:flex;
+    gap: 22px;
+  }
+  .stat{
+    text-align:right;
+  }
+  .stat .num{
+    font-family: inherit;
+    font-weight:700;
+    font-size:22px;
+    color: var(--gold);
+    line-height:1;
+  }
+  .stat .label{
+    font-size:11.5px;
+    color: var(--text-faint);
+    margin-top:4px;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex;
+    gap:10px;
+    margin-bottom: 26px;
+    flex-wrap:wrap;
+  }
+  .search-box{
+    flex:1;
+    min-width:220px;
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .search-box input:focus{ outline: none; border-color: var(--gold); }
+  .search-box input::placeholder{ color: var(--text-faint); }
+
+  button{
+    font-family: inherit;
+    cursor:pointer;
+    border:none;
+  }
+  .btn{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .btn:hover{ border-color: var(--gold); }
+  .btn-primary{
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover{ background:#c4483a; border-color:#c4483a; }
+
+  /* ---------- empty state ---------- */
+  .empty{
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 60px 20px;
+    text-align:center;
+    color: var(--text-muted);
+  }
+  .empty b{ color: var(--text); }
+
+  /* ---------- member grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .card-head .nickname{
+    font-family: inherit;
+    font-weight:700;
+    font-size: 18px;
+    color: #f3e9d6;
+  }
+  .icon-btn{
+    background:none;
+    color: var(--text-faint);
+    font-size: 18px;
+    line-height:1;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .icon-btn:hover{ color: var(--accent); background: var(--surface-2); }
+
+  .general-row{
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .general-row:last-child{ border-bottom:none; padding-bottom:0; }
+
+  .general-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 9px;
+  }
+  .role-tag{
+    flex-shrink:0;
+    font-size: 11.5px;
+    font-weight:700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--gold-soft);
+    color: var(--gold);
+    white-space:nowrap;
+  }
+  .role-tag.vice{
+    background: var(--surface-2);
+    color: var(--text-muted);
+  }
+  .name-input{
+    flex:1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+    font-weight:600;
+    padding: 4px 2px;
+    font-family: inherit;
+  }
+  .name-input:focus{ outline:none; border-color: var(--gold); }
+  .name-input::placeholder{ color: var(--text-faint); font-weight:400; }
+  .total-badge{
+    flex-shrink:0;
+    font-size: 11px;
+    font-weight:700;
+    color: var(--gold);
+    background: var(--gold-soft);
+    border-radius: 20px;
+    padding: 3px 9px;
+    white-space:nowrap;
+  }
+
+  .bin-toggle{
+    width:100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 12px;
+    font-weight:600;
+    padding: 6px 4px;
+    border-radius: 7px;
+  }
+  .bin-toggle.on{
+    background: var(--full-soft);
+    border-color: var(--full);
+    color: var(--full);
+  }
+
+  .metric-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+  .metric{
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 7px 8px;
+  }
+  .metric .m-label{
+    font-size: 10.5px;
+    color: var(--text-faint);
+    margin-bottom: 5px;
+  }
+  .pips{
+    display:flex;
+    gap:3px;
+    flex-wrap:wrap;
+  }
+  .pip{
+    width: 19px;
+    height: 19px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-faint);
+    font-size: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
+  .pip.active{
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #1a1405;
+    font-weight:700;
+  }
+  .pip.active.sub{
+    background: var(--text-faint);
+    border-color: var(--text-faint);
+    color: #10141b;
+  }
+
+  .tactic-toggle{
+    display:flex;
+    gap:6px;
+  }
+  .tactic-btn{
+    flex:1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight:600;
+    padding: 6px 4px;
+    border-radius: 7px;
+  }
+  .tactic-btn.active-full{
+    background: var(--full-soft);
+    border-color: var(--full);
+    color: var(--full);
+  }
+  .tactic-btn.active-sub{
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: #e08979;
+  }
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background: rgba(8,10,14,0.7);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal{
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 460px;
+    width: 100%;
+  }
+  .modal h2{
+    font-family: inherit;
+    margin: 0 0 6px;
+    font-size: 19px;
+  }
+  .modal p{
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 14px;
+  }
+  .modal textarea{
+    width:100%;
+    min-height: 140px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 13.5px;
+    resize: vertical;
+  }
+  .modal textarea:focus{ outline:none; border-color: var(--gold); }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top: 16px;
+  }
+
+  .toast{
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface-2);
+    border: 1px solid var(--gold);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .25s ease;
+    pointer-events:none;
+    z-index: 60;
+  }
+  .toast.show{ opacity: 1; }
+
+  .loading{
+    text-align:center;
+    padding: 80px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ---------- deck tabs ---------- */
+  .deck-tabs{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .deck-tab{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight:600;
+    padding: 5px 11px;
+    border-radius: 20px;
+  }
+  .deck-tab.active{
+    background: var(--gold-soft);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .deck-tab.add{
+    background: transparent;
+    border: 1px dashed var(--text-faint);
+    color: var(--text-faint);
+    width: 26px;
+    padding: 5px 0;
+    text-align:center;
+  }
+  .deck-tab.add:hover{ border-color: var(--gold); color: var(--gold); }
+  .deck-remove{
+    margin-left: auto;
+    background: none;
+    color: var(--text-faint);
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .deck-remove:hover{ color: var(--accent); background: var(--surface-2); }
+
+  /* ---------- summary (simplified) view ---------- */
+  .summary-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 10px;
+  }
+  .summary-box{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .summary-head{
+    font-family: inherit;
+    font-weight:700;
+    font-size: 13.5px;
+    color: #f3e9d6;
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .summary-line{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-size: 12.5px;
+    padding: 3px 0;
+  }
+  .summary-line .s-role{
+    flex-shrink:0;
+    width: 40px;
+    color: var(--text-faint);
+    font-size: 11px;
+  }
+  .summary-line .s-name{
+    flex:1;
+    color: var(--text);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .summary-line .s-promo{
+    flex-shrink:0;
+    color: var(--gold);
+    font-weight:700;
+    font-size: 11.5px;
+  }
+
+  .storage-warning{
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    color: #f3d9d4;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .title-block h1{
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    margin: 0 0 6px;
+    color: #f3e9d6;
+  }
+  .title-block p{
+    margin:0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+  .stat-row{ display:flex; gap: 20px; }
+  .stat{ text-align:right; }
+  .stat .num{ font-weight:700; font-size:20px; line-height:1; }
+  .stat .num.high{ color: var(--gold); }
+  .stat .num.mid{ color: var(--full); }
+  .stat .num.low{ color: #d98d7f; }
+  .stat .label{ font-size:11px; color: var(--text-faint); margin-top:4px; }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex;
+    gap:10px;
+    margin-bottom: 8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .search-box{ flex:1; min-width:200px; }
+  .search-box input{
+    width:100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 13px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .search-box input:focus{ outline: none; border-color: var(--gold); }
+  .search-box input::placeholder{ color: var(--text-faint); }
+
+  button{ font-family: inherit; cursor:pointer; border:none; }
+  .btn{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 15px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .btn:hover{ border-color: var(--gold); }
+  .btn-primary{ background: var(--accent); border: 1px solid var(--accent); color: #fff; }
+  .btn-primary:hover{ background:#c4483a; border-color:#c4483a; }
+
+  .view-tabs{ display:flex; gap:4px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:3px; }
+  .view-tab{
+    background: transparent;
+    color: var(--text-muted);
+    padding: 8px 13px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight:600;
+  }
+  .view-tab.active{ background: var(--gold-soft); color: var(--gold); }
+
+  .group-filter{ display:flex; gap:6px; margin: 14px 0 20px; flex-wrap:wrap; }
+  .filter-pill{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight:600;
+  }
+  .filter-pill.active{ border-color: var(--text); color: var(--text); background: var(--surface); }
+  .filter-pill.tier-high.active{ border-color: var(--gold); color: var(--gold); }
+  .filter-pill.tier-mid.active{ border-color: var(--full); color: var(--full); }
+  .filter-pill.tier-low.active{ border-color: var(--accent); color: #d98d7f; }
+
+  /* ---------- empty ---------- */
+  .empty{
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 56px 20px;
+    text-align:center;
+    color: var(--text-muted);
+    font-size: 13.5px;
+  }
+  .empty b{ color: var(--text); }
+
+  /* ---------- detail cards ---------- */
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card{ background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 17px 14px; }
+  .card-head{ display:flex; align-items:center; gap:8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+  .card-head .nickname{ font-weight:700; font-size: 16.5px; color: #f3e9d6; }
+  .tier-badge{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .tier-badge.tier-high{ background: var(--gold-soft); color: var(--gold); }
+  .tier-badge.tier-mid{ background: var(--full-soft); color: var(--full); }
+  .tier-badge.tier-low{ background: var(--accent-soft); color: #d98d7f; }
+  .icon-btn{ margin-left:auto; background:none; color: var(--text-faint); font-size: 17px; line-height:1; padding: 2px 6px; border-radius: 6px; }
+  .icon-btn:hover{ color: var(--accent); background: var(--surface-2); }
+
+  .general-row{ padding: 9px 0; border-bottom: 1px solid var(--border-soft); }
+  .general-row:last-child{ border-bottom:none; }
+  .general-top{ display:flex; align-items:center; gap:9px; margin-bottom: 8px; }
+  .role-tag{ flex-shrink:0; font-size: 11px; font-weight:700; padding: 3px 8px; border-radius: 20px; background: var(--gold-soft); color: var(--gold); white-space:nowrap; }
+  .role-tag.vice{ background: var(--surface-2); color: var(--text-muted); }
+  .name-input{ flex:1; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-size: 13.5px; font-weight:600; padding: 4px 2px; font-family: inherit; }
+  .name-input:focus{ outline:none; border-color: var(--gold); }
+  .name-input::placeholder{ color: var(--text-faint); font-weight:400; }
+
+  .field-row{ display:flex; gap:8px; align-items:center; }
+  .field{ flex:1; background: var(--surface-2); border-radius:8px; padding:7px 8px; }
+  .field .m-label{ font-size: 10px; color: var(--text-faint); margin-bottom:5px; }
+  .pips{ display:flex; gap:3px; flex-wrap:wrap; }
+  .pip{ width: 19px; height: 19px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-faint); font-size: 9.5px; display:flex; align-items:center; justify-content:center; padding:0; }
+  .pip.active{ background: var(--gold); border-color: var(--gold); color: #1a1405; font-weight:700; }
+
+  .level-field{ display:flex; align-items:center; gap:6px; }
+  .level-btn{ width:22px; height:22px; border-radius:6px; background: var(--surface); border:1px solid var(--border); color: var(--text-muted); font-size:13px; line-height:1; }
+  .level-btn:hover{ border-color: var(--gold); color: var(--gold); }
+  .level-input{ width:50px; background: transparent; border:none; border-bottom:1px solid var(--border); color: var(--text); font-size:13px; font-weight:700; text-align:center; padding:3px 0; font-family: inherit; }
+  .level-input:focus{ outline:none; border-color: var(--gold); }
+
+  .territory-row{ margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .territory-row .m-label{ font-size: 11px; color: var(--text-faint); margin-bottom: 6px; }
+  .updated-note{ margin-top: 10px; font-size: 11px; color: var(--text-faint); }
+
+  /* ---------- summary boxes ---------- */
+  .summary-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .summary-box{ background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .summary-head{ display:flex; align-items:center; gap:8px; font-weight:700; font-size: 13.5px; color: #f3e9d6; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--border-soft); }
+  .summary-line{ display:flex; align-items:center; gap: 8px; font-size: 12px; padding: 3px 0; }
+  .summary-line .s-role{ flex-shrink:0; width: 36px; color: var(--text-faint); font-size: 10.5px; }
+  .summary-line .s-name{ flex:1; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .summary-line .s-stat{ flex-shrink:0; color: var(--gold); font-weight:600; font-size: 11px; white-space:nowrap; }
+  .summary-foot{ margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border-soft); font-size: 11px; color: var(--text-faint); }
+  .summary-line-empty{ color: var(--text-faint); font-size:12px; padding: 4px 0; }
+
+  /* ---------- graph ---------- */
+  .chart-card{ background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+  .chart-note{ color: var(--text-muted); font-size: 13px; margin: 0 0 16px; }
+  .chart-legend{ display:flex; gap:16px; margin-top: 10px; flex-wrap:wrap; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size: 12.5px; color: var(--text-muted); }
+  .legend-item i{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{ position:fixed; inset:0; background: rgba(8,10,14,0.7); display:flex; align-items:center; justify-content:center; z-index: 50; padding: 20px; }
+  .modal{ background: var(--surface); border:1px solid var(--border); border-radius: 14px; padding: 24px; max-width: 460px; width: 100%; }
+  .modal h2{ margin: 0 0 6px; font-size: 18px; }
+  .modal p{ color: var(--text-muted); font-size: 13px; margin: 0 0 14px; }
+  .modal textarea{ width:100%; min-height: 140px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13.5px; resize: vertical; }
+  .modal textarea:focus{ outline:none; border-color: var(--gold); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top: 16px; }
+
+  .toast{ position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--surface-2); border: 1px solid var(--gold); color: var(--text); padding: 10px 18px; border-radius: 30px; font-size: 13px; opacity: 0; transition: opacity .25s ease; pointer-events:none; z-index: 60; max-width: 90vw; text-align:center; }
+  .toast.show{ opacity: 1; }
+
+  .loading{ text-align:center; padding: 80px 0; color: var(--text-muted); font-size: 14px; }
+
+  .storage-warning{ background: var(--accent-soft); border: 1px solid var(--accent); color: #f3d9d4; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 22px; }
+
+  /* ---------- hub / home page ---------- */
+  .hub-wrap{ max-width: 720px; margin: 0 auto; padding: 80px 24px; }
+  .hub-header{ text-align:center; margin-bottom: 40px; }
+  .hub-header h1{ font-weight:800; font-size: 30px; color: #f3e9d6; margin: 0 0 8px; letter-spacing:-0.5px; }
+  .hub-header p{ color: var(--text-muted); font-size: 14px; margin:0; }
+  .hub-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .hub-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 22px;
+    text-align: left;
+    color: var(--text);
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .hub-card:hover{ border-color: var(--gold); transform: translateY(-2px); }
+  .hub-icon{ font-size: 30px; margin-bottom: 14px; }
+  .hub-title{ font-weight:700; font-size: 17px; color: #f3e9d6; margin-bottom: 8px; }
+  .hub-desc{ font-size: 12.5px; color: var(--text-muted); line-height:1.5; }
+  @media (max-width: 560px){
+    .hub-grid{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- growth board: level row (below promotion/collection/image) ---------- */
+  .level-row{ margin-top: 8px; }
+  .level-row .m-label{ font-size: 10px; color: var(--text-faint); margin-bottom: 5px; }
+
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <div class="loading">불러오는 중...</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+
+// ============================================================
+// ⚠️ 여기에 Firebase 콘솔에서 복사한 설정값을 그대로 붙여넣으세요.
+// (프로젝트 개요 → </> 웹 아이콘 → 앱 등록 시 나오는 firebaseConfig 객체)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const FIREBASE_CONFIGURED = firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY';
+let firebaseReady = false;
+if (FIREBASE_CONFIGURED){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    firebaseReady = true;
+  }catch(e){
+    console.error('[Firebase 초기화 실패]', e);
+  }
+}
+
+// Same get/set shape as the old Claude-only window.storage, so the rest of
+// the app (loadData/saveData in both tools) didn't need to change at all —
+// only this layer underneath it did. Values are still stored as JSON
+// strings, exactly like before.
+const storage = {
+  async get(key){
+    if (!firebaseReady) throw new Error('Firebase가 설정되지 않았습니다 (firebaseConfig를 채워주세요)');
+    const snap = await firebase.database().ref(key).once('value');
+    const val = snap.val();
+    return val === null || val === undefined ? null : { key, value: val };
+  },
+  async set(key, value){
+    if (!firebaseReady) throw new Error('Firebase가 설정되지 않았습니다 (firebaseConfig를 채워주세요)');
+    await firebase.database().ref(key).set(value);
+    return { key, value };
+  }
+};
+
+const ROLES = ['주장', '부장 1', '부장 2'];
+const STORAGE_KEY = 'guild-deck-data';
+const MAX_DECKS = 10;
+
+function emptyGeneral(){
+  return { name: '', promotion: 0, collection: 0, image: 0, tactic: null };
+}
+function newDeckId(){
+  return 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+}
+function emptyDeck(){
+  return { id: newDeckId(), generals: [emptyGeneral(), emptyGeneral(), emptyGeneral()] };
+}
+function emptyMember(nickname){
+  return {
+    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+    nickname: nickname,
+    decks: [emptyDeck()]
+  };
+}
+
+// Older saved data stored one deck's generals directly on the member, and
+// an older version of the tool let 컬렉션/이미지 scale up with 진급. Both
+// get normalized here so existing saved data keeps working under the
+// current rules (컬렉션/이미지 are plain 0/1, independent of 진급).
+function migrateMember(m){
+  if (!m.decks){
+    m.decks = [{ id: newDeckId(), generals: m.generals || [emptyGeneral(), emptyGeneral(), emptyGeneral()] }];
+    delete m.generals;
+  }
+  m.decks.forEach(d => d.generals.forEach(clampGeneral));
+  return m;
+}
+
+let state = {
+  members: [],
+  search: '',
+  loaded: false,
+  viewMode: 'detail',   // 'detail' | 'summary'
+  activeDeck: {}         // memberId -> currently viewed deck index
+};
+
+// 컬렉션/이미지는 진급 수치와 무관한 단순 보유(1)/미보유(0) 값.
+function clampGeneral(g){
+  g.collection = g.collection ? 1 : 0;
+  g.image = g.image ? 1 : 0;
+  return g;
+}
+
+// 화면에 보여줄 합산 수치: 진급 + 컬렉션(1/0) + 이미지(1/0).
+function totalLevel(g){
+  return g.promotion + (g.collection ? 1 : 0) + (g.image ? 1 : 0);
+}
+
+// Storage now runs on Firebase instead of Claude's window.storage, so this
+// file works the same for anyone who opens it — not just inside Claude.
+// It only fails if firebaseConfig above hasn't been filled in yet.
+const STORAGE_AVAILABLE = FIREBASE_CONFIGURED && firebaseReady;
+
+function showStorageWarningBanner(){
+  const app = document.getElementById('app');
+  if (!app || document.getElementById('storage-warning')) return;
+  const banner = document.createElement('div');
+  banner.id = 'storage-warning';
+  banner.className = 'storage-warning';
+  banner.innerHTML =
+    '⚠️ 저장이 연결되지 않았어요. 이 파일 맨 위 <code>firebaseConfig</code> 값을 본인 Firebase 프로젝트 설정으로 채워야 저장이 동작해요. ' +
+    '지금은 새로고침하면 입력한 내용이 사라져요.';
+  app.prepend(banner);
+}
+
+async function loadData(){
+  if (!STORAGE_AVAILABLE){
+    state.members = [];
+    state.loaded = true;
+    renderShell();
+    showStorageWarningBanner();
+    return;
+  }
+  try{
+    const res = await storage.get(STORAGE_KEY);
+    if (res && res.value){
+      const parsed = JSON.parse(res.value);
+      state.members = (parsed.members || []).map(migrateMember);
+    }
+  }catch(e){
+    console.error('[맹원 덱 조사부] 불러오기 실패', e);
+    state.members = [];
+  }
+  state.loaded = true;
+  renderShell();
+}
+
+// Rapid-fire clicks (collection/image/tactic buttons) used to each schedule
+// their own save, so several requests could overlap and trip a rate limit —
+// that's what was showing up as "저장 실패". Now: only one save request is
+// ever in flight at a time; anything that changes while a save is running
+// gets folded into the next one instead of firing a parallel request, and a
+// failed save retries automatically before we ever tell the user it failed.
+let saveDebounceTimer = null;
+let saveInFlight = false;
+let savePending = false;
+
+function saveData(){
+  if (!STORAGE_AVAILABLE) return; // already explained via the banner
+  clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(runSave, 500);
+}
+
+async function runSave(){
+  if (saveInFlight){
+    savePending = true;
+    return;
+  }
+  saveInFlight = true;
+  await persistWithRetry(0);
+  saveInFlight = false;
+  if (savePending){
+    savePending = false;
+    runSave();
+  }
+}
+
+function describeStorageError(err){
+  if (!err) return '알 수 없는 오류';
+  if (err.message) return err.message;
+  try{ return JSON.stringify(err); }catch(e){ return String(err); }
+}
+
+async function persistWithRetry(attempt){
+  try{
+    const res = await storage.set(STORAGE_KEY, JSON.stringify({ members: state.members }));
+    if (!res) throw new Error('storage.set returned no result (요청은 갔지만 서버가 빈 응답을 돌려줬어요)');
+    showToast('저장됨');
+  }catch(err){
+    console.error('[맹원 덱 조사부] 저장 실패 (시도 ' + (attempt + 1) + ')', err);
+    if (attempt < 2){
+      await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+      return persistWithRetry(attempt + 1);
+    }
+    showToast('저장 실패: ' + describeStorageError(err));
+  }
+}
+
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=> t.classList.remove('show'), 1400);
+}
+
+function addMembersBulk(text){
+  const names = text.split('\n').map(s => s.trim()).filter(Boolean);
+  const existing = new Set(state.members.map(m => m.nickname));
+  let added = 0;
+  names.forEach(name => {
+    if (!existing.has(name)){
+      state.members.push(emptyMember(name));
+      existing.add(name);
+      added++;
+    }
+  });
+  saveData();
+  updateMemberCount();
+  renderMemberArea();
+  showToast(added + '명 등록됨');
+}
+
+function removeMember(id){
+  state.members = state.members.filter(m => m.id !== id);
+  delete state.activeDeck[id];
+  saveData();
+  updateMemberCount();
+  renderMemberArea();
+}
+
+function confirmRemove(id){
+  const member = state.members.find(m => m.id === id);
+  if (!member) return;
+  if (confirm(member.nickname + ' 님의 덱 정보를 전부 삭제할까요?')){
+    removeMember(id);
+  }
+}
+
+function getActiveDeckIndex(member){
+  const idx = state.activeDeck[member.id] || 0;
+  return Math.min(idx, member.decks.length - 1);
+}
+
+function setActiveDeck(memberId, index){
+  state.activeDeck[memberId] = index;
+  renderMemberArea();
+}
+
+function addDeck(memberId){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  if (member.decks.length >= MAX_DECKS){
+    showToast('덱은 최대 ' + MAX_DECKS + '개까지 등록할 수 있어요');
+    return;
+  }
+  member.decks.push(emptyDeck());
+  state.activeDeck[memberId] = member.decks.length - 1;
+  saveData();
+  renderMemberArea();
+}
+
+function removeDeck(memberId, deckIndex){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  if (member.decks.length <= 1){
+    showToast('최소 1개의 덱은 있어야 해요');
+    return;
+  }
+  if (!confirm('덱 ' + (deckIndex + 1) + '을(를) 삭제할까요?')) return;
+  member.decks.splice(deckIndex, 1);
+  const cur = state.activeDeck[memberId] || 0;
+  if (cur >= member.decks.length) state.activeDeck[memberId] = member.decks.length - 1;
+  saveData();
+  renderMemberArea();
+}
+
+// Name changes never trigger a re-render: nothing else on screen depends on
+// the name value live, and rebuilding the DOM mid-keystroke is what breaks
+// Korean IME composition. State + save only.
+function updateGeneralName(memberId, deckIndex, gIndex, value){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  const deck = member.decks[deckIndex];
+  if (!deck) return;
+  deck.generals[gIndex].name = value;
+  saveData();
+}
+
+// Numeric/tactic fields come from button clicks, so a full re-render of the
+// member area is safe here (no text composition in progress).
+function updateGeneralField(memberId, deckIndex, gIndex, field, value){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  const deck = member.decks[deckIndex];
+  if (!deck) return;
+  const g = deck.generals[gIndex];
+  g[field] = value;
+  clampGeneral(g);
+  saveData();
+  renderMemberArea();
+}
+
+function toggleTactic(memberId, deckIndex, gIndex, value){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  const deck = member.decks[deckIndex];
+  if (!deck) return;
+  const g = deck.generals[gIndex];
+  g.tactic = (g.tactic === value) ? null : value;
+  saveData();
+  renderMemberArea();
+}
+
+function toggleBinaryField(memberId, deckIndex, gIndex, field){
+  const member = state.members.find(m => m.id === memberId);
+  if (!member) return;
+  const deck = member.decks[deckIndex];
+  if (!deck) return;
+  const g = deck.generals[gIndex];
+  g[field] = g[field] ? 0 : 1;
+  saveData();
+  renderMemberArea();
+}
+
+function filteredMembers(){
+  const q = state.search.trim().toLowerCase();
+  if (!q) return state.members;
+  return state.members.filter(m => m.nickname.toLowerCase().includes(q));
+}
+
+function pipsHtml(memberId, deckIndex, gIndex, field, current, max, subStyle){
+  let html = '<div class="pips">';
+  for (let i=0; i<=max; i++){
+    const active = i === current;
+    html += `<button class="pip ${active ? 'active' : ''} ${active && subStyle ? 'sub' : ''}"
+      onclick="updateGeneralField('${memberId}', ${deckIndex}, ${gIndex}, '${field}', ${i})">${i}</button>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function binToggleHtml(memberId, deckIndex, gIndex, field, current){
+  const on = !!current;
+  return `<button class="bin-toggle ${on ? 'on' : ''}"
+    onclick="toggleBinaryField('${memberId}', ${deckIndex}, ${gIndex}, '${field}')">${on ? '보유' : '미보유'}</button>`;
+}
+
+function generalRowHtml(member, deckIndex, gIndex){
+  const deck = member.decks[deckIndex];
+  const g = deck.generals[gIndex];
+  const role = ROLES[gIndex];
+  const isMain = gIndex === 0;
+  return `
+    <div class="general-row">
+      <div class="general-top">
+        <span class="role-tag ${isMain ? '' : 'vice'}">${role}</span>
+        <input class="name-input" type="text" placeholder="장수 이름"
+          value="${escapeAttr(g.name)}"
+          data-member-id="${member.id}" data-deck-index="${deckIndex}" data-g-index="${gIndex}" />
+        <span class="total-badge">합계 ${totalLevel(g)}</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="m-label">진급 (0~5)</div>
+          ${pipsHtml(member.id, deckIndex, gIndex, 'promotion', g.promotion, 5, false)}
+        </div>
+        <div class="metric">
+          <div class="m-label">컬렉션</div>
+          ${binToggleHtml(member.id, deckIndex, gIndex, 'collection', g.collection)}
+        </div>
+        <div class="metric">
+          <div class="m-label">이미지</div>
+          ${binToggleHtml(member.id, deckIndex, gIndex, 'image', g.image)}
+        </div>
+      </div>
+      <div class="tactic-toggle">
+        <button class="tactic-btn ${g.tactic === 'full' ? 'active-full' : ''}"
+          onclick="toggleTactic('${member.id}', ${deckIndex}, ${gIndex}, 'full')">풀전법</button>
+        <button class="tactic-btn ${g.tactic === 'sub' ? 'active-sub' : ''}"
+          onclick="toggleTactic('${member.id}', ${deckIndex}, ${gIndex}, 'sub')">대체전법</button>
+      </div>
+    </div>
+  `;
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function deckTabsHtml(member, activeIndex){
+  const tabs = member.decks.map((d, i) =>
+    `<button class="deck-tab ${i === activeIndex ? 'active' : ''}" onclick="setActiveDeck('${member.id}', ${i})">덱 ${i+1}</button>`
+  ).join('');
+  const addBtn = member.decks.length < MAX_DECKS
+    ? `<button class="deck-tab add" onclick="addDeck('${member.id}')" title="덱 추가">+</button>`
+    : '';
+  const removeBtn = member.decks.length > 1
+    ? `<button class="deck-remove" onclick="removeDeck('${member.id}', ${activeIndex})" title="현재 덱 삭제">✕</button>`
+    : '';
+  return `<div class="deck-tabs">${tabs}${addBtn}${removeBtn}</div>`;
+}
+
+function cardHtml(member){
+  const activeIndex = getActiveDeckIndex(member);
+  const rows = [0, 1, 2].map(i => generalRowHtml(member, activeIndex, i)).join('');
+  return `
+    <div class="card">
+      <div class="card-head">
+        <span class="nickname">${escapeAttr(member.nickname)}</span>
+        <button class="icon-btn" onclick="confirmRemove('${member.id}')" title="맹원 삭제">✕</button>
+      </div>
+      ${deckTabsHtml(member, activeIndex)}
+      ${rows}
+    </div>
+  `;
+}
+
+// ---------- simplified "all decks" view ----------
+function summaryBoxHtml(member, deck, deckIndex){
+  const lines = deck.generals.map((g, i) => `
+    <div class="summary-line">
+      <span class="s-role">${ROLES[i]}</span>
+      <span class="s-name">${g.name ? escapeAttr(g.name) : '미지정'}</span>
+      <span class="s-promo">⭐${totalLevel(g)}</span>
+    </div>
+  `).join('');
+  return `
+    <div class="summary-box">
+      <div class="summary-head">${escapeAttr(member.nickname)} · 덱 ${deckIndex + 1}</div>
+      ${lines}
+    </div>
+  `;
+}
+
+function summaryHtml(list){
+  const boxes = [];
+  list.forEach(member => {
+    member.decks.forEach((deck, i) => boxes.push(summaryBoxHtml(member, deck, i)));
+  });
+  if (boxes.length === 0){
+    return `<div class="empty">${state.members.length === 0 ? '아직 등록된 맹원이 없습니다.' : '검색 결과가 없습니다.'}</div>`;
+  }
+  return `<div class="summary-grid">${boxes.join('')}</div>`;
+}
+
+function emptyDetailHtml(){
+  return `<div class="empty">${
+    state.members.length === 0
+    ? '아직 등록된 맹원이 없습니다.<br><b>맹원 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.'
+    : '검색 결과가 없습니다.'
+  }</div>`;
+}
+
+// Shared by both tools (tracker + growth board): each page's "+ 맹원 등록"
+// button passes its own bulk-add function in, so this one modal can serve
+// either page without knowing which page is currently active.
+let modalSubmitHandler = null;
+function openAddModal(onSubmit){
+  modalSubmitHandler = onSubmit;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.id = 'add-modal';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>맹원 등록</h2>
+      <p>닉네임을 한 줄에 한 명씩 붙여넣어 주세요.</p>
+      <textarea id="bulk-input" placeholder="관우&#10;장비&#10;조자룡"></textarea>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeAddModal()">취소</button>
+        <button class="btn btn-primary" onclick="submitAddModal()">등록</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('bulk-input').focus();
+}
+function closeAddModal(){
+  const m = document.getElementById('add-modal');
+  if (m) m.remove();
+}
+function submitAddModal(){
+  const text = document.getElementById('bulk-input').value;
+  const handler = modalSubmitHandler;
+  closeAddModal();
+  if (text.trim() && handler) handler(text);
+}
+
+function updateMemberCount(){
+  const el = document.getElementById('member-count');
+  if (el) el.textContent = state.members.length;
+}
+
+function toggleViewMode(){
+  state.viewMode = state.viewMode === 'summary' ? 'detail' : 'summary';
+  const btn = document.getElementById('view-toggle-btn');
+  if (btn) btn.textContent = state.viewMode === 'summary' ? '상세 보기' : '간소화 보기';
+  renderMemberArea();
+}
+
+// Builds the header/toolbar/search box exactly once. The search input lives
+// here and is never touched again after this — that's what keeps Korean
+// (or any) IME composition inside it uninterrupted. Only #member-area gets
+// rebuilt after this point.
+function renderShell(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <header>
+      <div class="title-block">
+        <h1>맹원 덱 조사부</h1>
+        <p>주장·부장 진급, 컬렉션·이미지 보유, 전법 완성도를 한눈에 관리합니다.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="num" id="member-count">${state.members.length}</div>
+          <div class="label">등록 맹원</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button class="btn" onclick="navigateTo('home')">← 메인으로</button>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="닉네임으로 검색" />
+      </div>
+      <button class="btn" id="view-toggle-btn" onclick="toggleViewMode()">간소화 보기</button>
+      <button class="btn btn-primary" onclick="openAddModal(addMembersBulk)">+ 맹원 등록</button>
+    </div>
+
+    <div id="member-area"></div>
+  `;
+
+  document.getElementById('search-input').addEventListener('input', function(e){
+    state.search = e.target.value;
+    renderMemberArea();
+  });
+
+  renderMemberArea();
+}
+
+// Rebuilds only the content area (detail cards or the simplified summary
+// grid). Called on search, add/remove, view toggle, and any button-driven
+// field change — never while a text field is being typed in, so this never
+// fights with input composition.
+function renderMemberArea(){
+  const area = document.getElementById('member-area');
+  if (!area) return;
+  const list = filteredMembers();
+
+  if (state.viewMode === 'summary'){
+    area.innerHTML = summaryHtml(list);
+    return;
+  }
+
+  area.innerHTML = list.length === 0 ? emptyDetailHtml() : `<div class="grid">${list.map(cardHtml).join('')}</div>`;
+
+  // Name inputs are wired up here via addEventListener instead of an inline
+  // oninput attribute, and only update state (see updateGeneralName) —
+  // no re-render happens while typing, so composed Korean text stays intact.
+  area.querySelectorAll('.name-input').forEach(function(input){
+    input.addEventListener('input', function(e){
+      updateGeneralName(
+        e.target.dataset.memberId,
+        parseInt(e.target.dataset.deckIndex, 10),
+        parseInt(e.target.dataset.gIndex, 10),
+        e.target.value
+      );
+    });
+  });
+}
+
+function bootstrapLoadingState(){
+  document.getElementById('app').innerHTML = '<div class="loading">불러오는 중...</div>';
+}
+
+/* ============ 개척덱 성장 현황 게시판 ============ */
+const GROWTH_STORAGE_KEY = 'pioneer-deck-growth-data';
+const TIER_LABEL = { high: '고진급', mid: '중진급', low: '저진급' };
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function currentHourKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}`;
+}
+function formatHourLabel(hourKey){
+  if (!hourKey) return '기록 없음';
+  const [datePart, hourPart] = hourKey.split('T');
+  const parts = datePart.split('-');
+  return `${parts[1]}/${parts[2]} ${hourPart}시`;
+}
+
+function emptyGeneralP(){ return { name: '', promotion: 0, collection: 0, image: 0, level: 0 }; }
+function blankSnapshotFields(){
+  return { generals: [emptyGeneralP(), emptyGeneralP(), emptyGeneralP()], territory: 3 };
+}
+function growthEmptyMember(nickname){
+  return {
+    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+    nickname: nickname,
+    history: []
+  };
+}
+
+let growthState = {
+  members: [],
+  search: '',
+  loaded: false,
+  viewMode: 'detail',      // 'detail' | 'summary' | 'graph'
+  groupFilter: 'all'       // 'all' | 'high' | 'mid' | 'low'
+};
+
+function getLatestSnapshot(member){
+  return member.history.length ? member.history[member.history.length - 1] : null;
+}
+
+// All edits land on the current hour's snapshot. If one doesn't exist yet
+// this hour, a new one is cloned forward from the latest snapshot so the
+// admin doesn't have to re-enter everything — only the field that changed.
+function ensureCurrentSnapshot(member, mutateFn){
+  const hourKey = currentHourKey();
+  let snap = getLatestSnapshot(member);
+  if (!snap || snap.hourKey !== hourKey){
+    const base = snap ? { generals: snap.generals.map(g => ({...g})), territory: snap.territory } : blankSnapshotFields();
+    snap = { hourKey, ts: Date.now(), generals: base.generals, territory: base.territory };
+    member.history.push(snap);
+  }
+  snap.ts = Date.now();
+  mutateFn(snap);
+  growthSaveData();
+}
+
+function totalGrade(g){
+  return g.promotion + (g.collection ? 1 : 0) + (g.image ? 1 : 0);
+}
+// avgPromotion now reflects the combined 0~7 grade (진급+컬렉션+이미지), not raw 진급 alone.
+function avgPromotion(snap){
+  return (totalGrade(snap.generals[0]) + totalGrade(snap.generals[1]) + totalGrade(snap.generals[2])) / 3;
+}
+function totalLevelOf(snap){
+  return snap.generals.reduce((s, g) => s + (g.level || 0), 0);
+}
+function tierOf(avgProm){
+  if (avgProm >= 5) return 'high';
+  if (avgProm >= 3) return 'mid';
+  return 'low';
+}
+
+async function growthLoadData(){
+  if (!STORAGE_AVAILABLE){
+    growthState.members = [];
+    growthState.loaded = true;
+    growthRenderShell();
+    showStorageWarningBanner();
+    return;
+  }
+  try{
+    const res = await storage.get(GROWTH_STORAGE_KEY);
+    if (res && res.value){
+      const parsed = JSON.parse(res.value);
+      growthState.members = parsed.members || [];
+    }
+  }catch(e){
+    console.error('[개척덱 성장 현황] 불러오기 실패', e);
+    growthState.members = [];
+  }
+  growthState.loaded = true;
+  growthRenderShell();
+}
+
+let growthSaveDebounceTimer = null;
+let growthSaveInFlight = false;
+let growthSavePending = false;
+
+function growthSaveData(){
+  if (!STORAGE_AVAILABLE) return;
+  clearTimeout(growthSaveDebounceTimer);
+  growthSaveDebounceTimer = setTimeout(growthRunSave, 500);
+}
+async function growthRunSave(){
+  if (growthSaveInFlight){ growthSavePending = true; return; }
+  growthSaveInFlight = true;
+  await growthPersistWithRetry(0);
+  growthSaveInFlight = false;
+  if (growthSavePending){ growthSavePending = false; growthRunSave(); }
+}
+async function growthPersistWithRetry(attempt){
+  try{
+    const res = await storage.set(GROWTH_STORAGE_KEY, JSON.stringify({ members: growthState.members }));
+    if (!res) throw new Error('storage.set returned no result');
+    showToast('저장됨');
+  }catch(err){
+    console.error('[개척덱 성장 현황] 저장 실패 (시도 ' + (attempt+1) + ')', err);
+    if (attempt < 2){
+      await new Promise(r => setTimeout(r, 700 * (attempt+1)));
+      return growthPersistWithRetry(attempt+1);
+    }
+    showToast('저장 실패: ' + describeStorageError(err));
+  }
+}
+
+function growthAddMembersBulk(text){
+  const names = text.split('\n').map(s => s.trim()).filter(Boolean);
+  const existing = new Set(growthState.members.map(m => m.nickname));
+  let added = 0;
+  names.forEach(name => {
+    if (!existing.has(name)){
+      growthState.members.push(growthEmptyMember(name));
+      existing.add(name);
+      added++;
+    }
+  });
+  growthSaveData();
+  growthRenderMemberArea();
+  showToast(added + '명 등록됨');
+}
+
+function growthRemoveMember(id){
+  growthState.members = growthState.members.filter(m => m.id !== id);
+  growthSaveData();
+  growthRenderMemberArea();
+}
+function growthConfirmRemove(id){
+  const member = growthState.members.find(m => m.id === id);
+  if (!member) return;
+  if (confirm(member.nickname + ' 님의 기록을 전부 삭제할까요?')) growthRemoveMember(id);
+}
+
+// ---------- field update handlers ----------
+function growthUpdateGeneralName(memberId, gIndex, value){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  ensureCurrentSnapshot(member, snap => { snap.generals[gIndex].name = value; });
+}
+function updateGeneralLevelInput(memberId, gIndex, value){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  const n = Math.max(0, parseInt(value, 10) || 0);
+  ensureCurrentSnapshot(member, snap => { snap.generals[gIndex].level = n; });
+}
+function stepLevel(memberId, gIndex, delta){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  ensureCurrentSnapshot(member, snap => {
+    snap.generals[gIndex].level = Math.max(0, (snap.generals[gIndex].level || 0) + delta);
+  });
+  growthRenderMemberArea();
+}
+function updateGeneralPromotion(memberId, gIndex, value){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  ensureCurrentSnapshot(member, snap => { snap.generals[gIndex].promotion = value; });
+  growthRenderMemberArea();
+}
+function updateTerritory(memberId, value){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  ensureCurrentSnapshot(member, snap => { snap.territory = value; });
+  growthRenderMemberArea();
+}
+
+function toggleBinaryFieldP(memberId, gIndex, field){
+  const member = growthState.members.find(m => m.id === memberId);
+  if (!member) return;
+  ensureCurrentSnapshot(member, snap => {
+    snap.generals[gIndex][field] = snap.generals[gIndex][field] ? 0 : 1;
+  });
+  growthRenderMemberArea();
+}
+
+function setGroupFilter(key){
+  growthState.groupFilter = key;
+  growthRenderMemberArea();
+}
+
+function growthFilteredMembers(){
+  const q = growthState.search.trim().toLowerCase();
+  return growthState.members.filter(m => {
+    if (q && !m.nickname.toLowerCase().includes(q)) return false;
+    if (growthState.groupFilter !== 'all'){
+      const snap = getLatestSnapshot(m);
+      if (!snap) return false;
+      if (tierOf(avgPromotion(snap)) !== growthState.groupFilter) return false;
+    }
+    return true;
+  });
+}
+
+// ---------- detail view ----------
+function pipsHtmlPromotion(memberId, gIndex, current){
+  let html = '<div class="pips">';
+  for (let i=0; i<=5; i++){
+    html += `<button class="pip ${i===current?'active':''}" onclick="updateGeneralPromotion('${memberId}', ${gIndex}, ${i})">${i}</button>`;
+  }
+  return html + '</div>';
+}
+function pipsHtmlTerritory(memberId, current){
+  let html = '<div class="pips">';
+  for (let i=3; i<=10; i++){
+    html += `<button class="pip ${i===current?'active':''}" onclick="updateTerritory('${memberId}', ${i})">${i}</button>`;
+  }
+  return html + '</div>';
+}
+
+function generalEditRowHtml(member, snap, gIndex){
+  const g = snap.generals[gIndex];
+  const role = ROLES[gIndex];
+  return `
+    <div class="general-row">
+      <div class="general-top">
+        <span class="role-tag ${gIndex===0?'':'vice'}">${role}</span>
+        <input class="name-input" type="text" placeholder="장수 이름" value="${escapeAttr(g.name)}"
+          data-member-id="${member.id}" data-g-index="${gIndex}" />
+        <span class="total-badge">⭐${totalGrade(g)}</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="m-label">진급 (0~5)</div>
+          ${pipsHtmlPromotion(member.id, gIndex, g.promotion)}
+        </div>
+        <div class="metric">
+          <div class="m-label">컬렉션</div>
+          <button class="bin-toggle ${g.collection?'on':''}" onclick="toggleBinaryFieldP('${member.id}', ${gIndex}, 'collection')">${g.collection?'보유':'미보유'}</button>
+        </div>
+        <div class="metric">
+          <div class="m-label">이미지</div>
+          <button class="bin-toggle ${g.image?'on':''}" onclick="toggleBinaryFieldP('${member.id}', ${gIndex}, 'image')">${g.image?'보유':'미보유'}</button>
+        </div>
+      </div>
+      <div class="level-row">
+        <div class="m-label">레벨</div>
+        <div class="level-field">
+          <button class="level-btn" onclick="stepLevel('${member.id}', ${gIndex}, -1)">−</button>
+          <input class="level-input" type="number" min="0" value="${g.level}"
+            data-member-id="${member.id}" data-g-index="${gIndex}" />
+          <button class="level-btn" onclick="stepLevel('${member.id}', ${gIndex}, 1)">+</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function memberCardHtml(member){
+  const snap = getLatestSnapshot(member) || { hourKey: null, ...blankSnapshotFields() };
+  const tier = tierOf(avgPromotion(snap));
+  const rows = [0,1,2].map(i => generalEditRowHtml(member, snap, i)).join('');
+  return `
+    <div class="card">
+      <div class="card-head">
+        <span class="nickname">${escapeAttr(member.nickname)}</span>
+        <span class="tier-badge tier-${tier}">${TIER_LABEL[tier]}</span>
+        <button class="icon-btn" onclick="growthConfirmRemove('${member.id}')" title="맹원 삭제">✕</button>
+      </div>
+      ${rows}
+      <div class="territory-row">
+        <div class="m-label">점령한 최대 토지 레벨 (3~10)</div>
+        ${pipsHtmlTerritory(member.id, snap.territory)}
+      </div>
+      <div class="updated-note">마지막 기록: ${formatHourLabel(snap.hourKey)}</div>
+    </div>
+  `;
+}
+
+// ---------- summary view ----------
+function growthSummaryBoxHtml(member){
+  const snap = getLatestSnapshot(member);
+  if (!snap){
+    return `
+      <div class="summary-box">
+        <div class="summary-head"><span>${escapeAttr(member.nickname)}</span></div>
+        <div class="summary-line-empty">아직 기록이 없습니다</div>
+      </div>
+    `;
+  }
+  const tier = tierOf(avgPromotion(snap));
+  const lines = snap.generals.map((g, i) => `
+    <div class="summary-line">
+      <span class="s-role">${ROLES[i]}</span>
+      <span class="s-name">${g.name ? escapeAttr(g.name) : '미지정'}</span>
+      <span class="s-stat">⭐${totalGrade(g)} · Lv${g.level}</span>
+    </div>
+  `).join('');
+  return `
+    <div class="summary-box">
+      <div class="summary-head">
+        <span>${escapeAttr(member.nickname)}</span>
+        <span class="tier-badge tier-${tier}">${TIER_LABEL[tier]}</span>
+      </div>
+      ${lines}
+      <div class="summary-foot">최대 토지 Lv.${snap.territory} · ${formatHourLabel(snap.hourKey)} 기준</div>
+    </div>
+  `;
+}
+
+// ---------- graph view ----------
+function snapshotAtOrBefore(member, hourKey){
+  let result = null;
+  for (const h of member.history){
+    if (h.hourKey <= hourKey) result = h; else break;
+  }
+  return result;
+}
+function avg(arr){ return arr.reduce((a,b)=>a+b, 0) / arr.length; }
+
+function buildGrowthSeries(){
+  const hourSet = new Set();
+  growthState.members.forEach(m => m.history.forEach(h => hourSet.add(h.hourKey)));
+  const hours = Array.from(hourSet).sort();
+
+  const series = { high: [], mid: [], low: [] };
+  hours.forEach(hourKey => {
+    const bucket = { high: [], mid: [], low: [] };
+    growthState.members.forEach(member => {
+      const snap = snapshotAtOrBefore(member, hourKey);
+      if (!snap) return;
+      bucket[tierOf(avgPromotion(snap))].push(totalLevelOf(snap));
+    });
+    ['high','mid','low'].forEach(t => {
+      if (bucket[t].length) series[t].push({ hourKey, value: avg(bucket[t]) });
+    });
+  });
+  return { hours, ...series };
+}
+
+function pathAndDots(points, xFor, yFor, color){
+  if (!points.length) return '';
+  const path = points.map((p,i) => (i===0?'M':'L') + xFor(p.hourKey).toFixed(1) + ',' + yFor(p.value).toFixed(1)).join(' ');
+  const dots = points.map(p => `<circle cx="${xFor(p.hourKey).toFixed(1)}" cy="${yFor(p.value).toFixed(1)}" r="3.2" fill="${color}" />`).join('');
+  return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2" />${dots}`;
+}
+
+function renderGrowthChart(){
+  const container = document.getElementById('chart-area');
+  if (!container) return;
+  const { hours, high, mid, low } = buildGrowthSeries();
+
+  if (!hours.length){
+    container.innerHTML = `<div class="empty">아직 쌓인 기록이 없습니다.<br>상세 입력 화면에서 값을 입력하면 시간대별로 자동 기록돼요.</div>`;
+    return;
+  }
+
+  const W = 800, H = 320, padL = 46, padR = 20, padT = 20, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const allValues = [].concat(high, mid, low).map(p => p.value);
+  const maxV = Math.max(10, ...allValues);
+  const hourIndex = {}; hours.forEach((h,i) => hourIndex[h] = i);
+  const xFor = h => padL + (hours.length <= 1 ? plotW/2 : (hourIndex[h] / (hours.length - 1)) * plotW);
+  const yFor = v => padT + plotH - (v / maxV) * plotH;
+
+  let gridHtml = '';
+  const steps = 4;
+  for (let i=0; i<=steps; i++){
+    const v = Math.round(maxV * i / steps);
+    const y = yFor(v);
+    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#232b38" stroke-width="1" />`;
+    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#5c6779">${v}</text>`;
+  }
+  const labelCount = Math.min(6, hours.length);
+  let xLabelsHtml = '';
+  for (let i=0; i<labelCount; i++){
+    const idx = Math.round(i * (hours.length - 1) / Math.max(1, labelCount - 1));
+    const h = hours[idx];
+    xLabelsHtml += `<text x="${xFor(h).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#5c6779">${formatHourLabel(h)}</text>`;
+  }
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+      ${gridHtml}
+      ${xLabelsHtml}
+      ${pathAndDots(high, xFor, yFor, '#c9a227')}
+      ${pathAndDots(mid, xFor, yFor, '#4c8c6b')}
+      ${pathAndDots(low, xFor, yFor, '#b7402f')}
+    </svg>
+    <div class="chart-legend">
+      <span class="legend-item"><i style="background:#c9a227"></i>고진급 (평균 레벨 합)</span>
+      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급 (평균 레벨 합)</span>
+      <span class="legend-item"><i style="background:#b7402f"></i>저진급 (평균 레벨 합)</span>
+    </div>
+  `;
+}
+
+// ---------- shell / render ----------
+function setViewMode(mode){
+  growthState.viewMode = mode;
+  document.querySelectorAll('.view-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  growthRenderMemberArea();
+}
+
+function growthRenderShell(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <header>
+      <div class="title-block">
+        <h1>개척덱 성장 현황 게시판</h1>
+        <p>시간대별 스냅샷으로 개척덱 성장을 기록하고, 그룹별 추이를 확인합니다.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="stat-count">0</div><div class="label">등록 맹원</div></div>
+        <div class="stat"><div class="num high" id="stat-high">0</div><div class="label">고진급</div></div>
+        <div class="stat"><div class="num mid" id="stat-mid">0</div><div class="label">중진급</div></div>
+        <div class="stat"><div class="num low" id="stat-low">0</div><div class="label">저진급</div></div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button class="btn" onclick="navigateTo('home')">← 메인으로</button>
+      <div class="search-box"><input type="text" id="search-input" placeholder="닉네임으로 검색" /></div>
+      <div class="view-tabs">
+        <button class="view-tab active" data-mode="detail" onclick="setViewMode('detail')">상세 입력</button>
+        <button class="view-tab" data-mode="summary" onclick="setViewMode('summary')">간소화 보기</button>
+        <button class="view-tab" data-mode="graph" onclick="setViewMode('graph')">성장 그래프</button>
+      </div>
+      <button class="btn btn-primary" onclick="openAddModal(growthAddMembersBulk)">+ 맹원 등록</button>
+    </div>
+
+    <div id="member-area"></div>
+  `;
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    growthState.search = e.target.value;
+    growthRenderMemberArea();
+  });
+
+  growthRenderMemberArea();
+}
+
+function updateStatCounts(){
+  const counts = { high: 0, mid: 0, low: 0 };
+  growthState.members.forEach(m => {
+    const snap = getLatestSnapshot(m);
+    if (!snap) return;
+    counts[tierOf(avgPromotion(snap))]++;
+  });
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('stat-count', growthState.members.length);
+  set('stat-high', counts.high);
+  set('stat-mid', counts.mid);
+  set('stat-low', counts.low);
+}
+
+function groupFilterHtml(){
+  const opts = [['all','전체'],['high','고진급'],['mid','중진급'],['low','저진급']];
+  return `<div class="group-filter">${opts.map(([key,label]) =>
+    `<button class="filter-pill ${growthState.groupFilter===key?'active':''} ${key!=='all'?'tier-'+key:''}" onclick="setGroupFilter('${key}')">${label}</button>`
+  ).join('')}</div>`;
+}
+
+function emptyStateHtml(kind){
+  if (growthState.members.length === 0){
+    return `<div class="empty">아직 등록된 맹원이 없습니다.<br><b>맹원 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.</div>`;
+  }
+  return `<div class="empty">조건에 맞는 맹원이 없습니다.</div>`;
+}
+
+function growthRenderMemberArea(){
+  updateStatCounts();
+  const area = document.getElementById('member-area');
+  if (!area) return;
+
+  if (growthState.viewMode === 'graph'){
+    area.innerHTML = `
+      <div class="chart-card">
+        <p class="chart-note">그룹(고진급·중진급·저진급)별 세 장수 레벨 합계의 시간대 평균 추이입니다. 검색/그룹 필터는 그래프에는 적용되지 않아요.</p>
+        <div id="chart-area"></div>
+      </div>
+    `;
+    renderGrowthChart();
+    return;
+  }
+
+  const list = growthFilteredMembers();
+  const filterBar = groupFilterHtml();
+
+  if (growthState.viewMode === 'summary'){
+    area.innerHTML = filterBar + (list.length === 0 ? emptyStateHtml() : `<div class="summary-grid">${list.map(growthSummaryBoxHtml).join('')}</div>`);
+    return;
+  }
+
+  // detail
+  area.innerHTML = filterBar + (list.length === 0 ? emptyStateHtml() : `<div class="grid">${list.map(memberCardHtml).join('')}</div>`);
+
+  area.querySelectorAll('.name-input').forEach(input => {
+    input.addEventListener('input', e => {
+      growthUpdateGeneralName(e.target.dataset.memberId, parseInt(e.target.dataset.gIndex, 10), e.target.value);
+    });
+  });
+  area.querySelectorAll('.level-input').forEach(input => {
+    input.addEventListener('input', e => {
+      updateGeneralLevelInput(e.target.dataset.memberId, parseInt(e.target.dataset.gIndex, 10), e.target.value);
+    });
+  });
+}
+
+
+// ============================================================
+// Router: one file, two tools + a home screen. Only one of
+// tracker/growth's storage keys is touched at a time, so their
+// data never mixes; navigating just swaps what's mounted into
+// #app.
+// ============================================================
+let currentPage = 'home';
+
+function navigateTo(page){
+  currentPage = page;
+  if (page === 'tracker'){
+    bootstrapLoadingState();
+    loadData();
+  } else if (page === 'growth'){
+    bootstrapLoadingState();
+    growthLoadData();
+  } else {
+    renderHome();
+  }
+}
+
+function renderHome(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="hub-wrap">
+      <div class="hub-header">
+        <h1>길드 운영 도구</h1>
+        <p>원하는 도구를 선택하세요.</p>
+      </div>
+      <div class="hub-grid">
+        <button class="hub-card" onclick="navigateTo('tracker')">
+          <div class="hub-icon">🗡️</div>
+          <div class="hub-title">맹원 덱 조사부</div>
+          <div class="hub-desc">주장·부장 진급, 컬렉션·이미지 보유, 전법 완성도를 관리합니다.</div>
+        </button>
+        <button class="hub-card" onclick="navigateTo('growth')">
+          <div class="hub-icon">🌱</div>
+          <div class="hub-title">개척덱 성장 현황</div>
+          <div class="hub-desc">개척덱 성장을 시간대별로 기록하고 그룹별 추이를 확인합니다.</div>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+renderHome();
+
+</script>
+</body>
+</html>
