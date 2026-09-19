@@ -130,6 +130,26 @@
     color: #fff;
   }
   .btn-primary:hover{ background:#c4483a; border-color:#c4483a; }
+  .btn-danger{
+    background: transparent;
+    border: 1px solid #7a3a1a;
+    color: #e0a468;
+  }
+  .btn-danger:hover{ background: #7a3a1a33; border-color: #e0a468; }
+
+  .quick-add-box{ display:flex; gap:6px; }
+  .quick-add-box input{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    font-size: 13.5px;
+    font-family: inherit;
+    width: 150px;
+  }
+  .quick-add-box input:focus{ outline:none; border-color: var(--gold); }
+  .quick-add-box input::placeholder{ color: var(--text-faint); }
 
   /* ---------- empty state ---------- */
   .empty{
@@ -968,6 +988,16 @@ function addMembersBulk(text){
   showToast(added + '명 등록됨');
 }
 
+function resetMembers(){
+  if (state.members.length === 0){ showToast('이미 비어 있어요'); return; }
+  if (!confirm('전체 명단(' + state.members.length + '명)과 입력한 덱 정보를 모두 지울까요? 되돌릴 수 없어요.')) return;
+  state.members = [];
+  saveData();
+  updateMemberCount();
+  renderMemberArea();
+  showToast('명단을 초기화했어요');
+}
+
 function removeMember(id){
   state.members = state.members.filter(m => m.id !== id);
   delete state.activeDeck[id];
@@ -1194,7 +1224,7 @@ function summaryHtml(list){
 function emptyDetailHtml(){
   return `<div class="empty">${
     state.members.length === 0
-    ? '아직 등록된 맹원이 없습니다.<br><b>맹원 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.'
+    ? '아직 등록된 맹원이 없습니다.<br>이름 입력창이나 <b>여러 명 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.'
     : '검색 결과가 없습니다.'
   }</div>`;
 }
@@ -1270,8 +1300,13 @@ function renderShell(){
       <div class="search-box">
         <input type="text" id="search-input" placeholder="닉네임으로 검색" />
       </div>
+      <div class="quick-add-box">
+        <input type="text" id="quick-add-input" placeholder="이름 입력 후 Enter" />
+        <button class="btn" id="quick-add-btn">추가</button>
+      </div>
       <button class="btn" id="view-toggle-btn" onclick="toggleViewMode()">간소화 보기</button>
-      <button class="btn btn-primary" onclick="openAddModal(addMembersBulk)">+ 맹원 등록</button>
+      <button class="btn btn-primary" onclick="openAddModal(addMembersBulk)">+ 여러 명 등록</button>
+      <button class="btn btn-danger" onclick="resetMembers()">명단 초기화</button>
     </div>
 
     <div id="member-area"></div>
@@ -1280,6 +1315,19 @@ function renderShell(){
   document.getElementById('search-input').addEventListener('input', function(e){
     state.search = e.target.value;
     renderMemberArea();
+  });
+
+  const quickInput = document.getElementById('quick-add-input');
+  const submitQuickAdd = () => {
+    const name = quickInput.value.trim();
+    if (!name) return;
+    addMembersBulk(name);
+    quickInput.value = '';
+    quickInput.focus();
+  };
+  document.getElementById('quick-add-btn').addEventListener('click', submitQuickAdd);
+  quickInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') submitQuickAdd();
   });
 
   renderMemberArea();
@@ -1469,6 +1517,15 @@ function growthAddMembersBulk(text){
   growthSaveData();
   growthRenderMemberArea();
   showToast(added + '명 등록됨');
+}
+
+function growthResetMembers(){
+  if (growthState.members.length === 0){ showToast('이미 비어 있어요'); return; }
+  if (!confirm('전체 명단(' + growthState.members.length + '명)과 기록된 성장 데이터를 모두 지울까요? 되돌릴 수 없어요.')) return;
+  growthState.members = [];
+  growthSaveData();
+  growthRenderMemberArea();
+  showToast('명단을 초기화했어요');
 }
 
 function growthRemoveMember(id){
@@ -1945,13 +2002,18 @@ function growthRenderShell(){
     <div class="toolbar">
       <button class="btn" onclick="navigateTo('home')">← 메인으로</button>
       <div class="search-box"><input type="text" id="search-input" placeholder="닉네임으로 검색" /></div>
+      <div class="quick-add-box">
+        <input type="text" id="quick-add-input" placeholder="이름 입력 후 Enter" />
+        <button class="btn" id="quick-add-btn">추가</button>
+      </div>
       <div class="view-tabs">
         <button class="view-tab active" data-mode="detail" onclick="setViewMode('detail')">상세 입력</button>
         <button class="view-tab" data-mode="summary" onclick="setViewMode('summary')">간소화 보기</button>
         <button class="view-tab" data-mode="graph" onclick="setViewMode('graph')">성장 그래프</button>
         <button class="view-tab" data-mode="territory" onclick="setViewMode('territory')">토지 분포</button>
       </div>
-      <button class="btn btn-primary" onclick="openAddModal(growthAddMembersBulk)">+ 맹원 등록</button>
+      <button class="btn btn-primary" onclick="openAddModal(growthAddMembersBulk)">+ 여러 명 등록</button>
+      <button class="btn btn-danger" onclick="growthResetMembers()">명단 초기화</button>
     </div>
 
     <div id="member-area"></div>
@@ -1960,6 +2022,19 @@ function growthRenderShell(){
   document.getElementById('search-input').addEventListener('input', e => {
     growthState.search = e.target.value;
     growthRenderMemberArea();
+  });
+
+  const quickInput = document.getElementById('quick-add-input');
+  const submitQuickAdd = () => {
+    const name = quickInput.value.trim();
+    if (!name) return;
+    growthAddMembersBulk(name);
+    quickInput.value = '';
+    quickInput.focus();
+  };
+  document.getElementById('quick-add-btn').addEventListener('click', submitQuickAdd);
+  quickInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') submitQuickAdd();
   });
 
   growthRenderMemberArea();
@@ -1993,7 +2068,7 @@ function groupFilterHtml(){
 
 function emptyStateHtml(kind){
   if (growthState.members.length === 0){
-    return `<div class="empty">아직 등록된 맹원이 없습니다.<br><b>맹원 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.</div>`;
+    return `<div class="empty">아직 등록된 맹원이 없습니다.<br>이름 입력창이나 <b>여러 명 등록</b> 버튼으로 닉네임을 먼저 등록해 주세요.</div>`;
   }
   return `<div class="empty">조건에 맞는 맹원이 없습니다.</div>`;
 }
