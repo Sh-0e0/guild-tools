@@ -988,8 +988,15 @@ function addMembersBulk(text){
   showToast(added + '명 등록됨');
 }
 
+// Just a click-guard against accidental resets, not real security — the
+// password is sitting in plain sight in this file's source either way.
+const RESET_PASSWORD = '1315';
+
 function resetMembers(){
   if (state.members.length === 0){ showToast('이미 비어 있어요'); return; }
+  const pw = prompt('명단을 초기화하려면 비밀번호를 입력하세요.');
+  if (pw === null) return;
+  if (pw !== RESET_PASSWORD){ showToast('비밀번호가 올바르지 않아요'); return; }
   if (!confirm('전체 명단(' + state.members.length + '명)과 입력한 덱 정보를 모두 지울까요? 되돌릴 수 없어요.')) return;
   state.members = [];
   saveData();
@@ -1521,6 +1528,9 @@ function growthAddMembersBulk(text){
 
 function growthResetMembers(){
   if (growthState.members.length === 0){ showToast('이미 비어 있어요'); return; }
+  const pw = prompt('명단을 초기화하려면 비밀번호를 입력하세요.');
+  if (pw === null) return;
+  if (pw !== RESET_PASSWORD){ showToast('비밀번호가 올바르지 않아요'); return; }
   if (!confirm('전체 명단(' + growthState.members.length + '명)과 기록된 성장 데이터를 모두 지울까요? 되돌릴 수 없어요.')) return;
   growthState.members = [];
   growthSaveData();
