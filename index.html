@@ -9,20 +9,22 @@
 <style>
 
   :root{
-    --bg: #10141b;
-    --surface: #1a2029;
-    --surface-2: #212a38;
-    --border: #2b3444;
-    --border-soft: #232b38;
-    --text: #e9edf3;
-    --text-muted: #8b96a8;
-    --text-faint: #5c6779;
-    --accent: #b7402f;
-    --accent-soft: #b7402f33;
-    --gold: #c9a227;
-    --gold-soft: #c9a22733;
-    --full: #4c8c6b;
-    --full-soft: #4c8c6b2e;
+    --bg: #FDFCFA;
+    --surface: #FFFFFF;
+    --surface-2: #F4F0E6;
+    --border: #E3DDCF;
+    --border-soft: #ECE7DA;
+    --text: #221F1B;
+    --text-muted: #6B6558;
+    --text-faint: #8A8371;
+    --accent: #9C3327;
+    --accent-soft: #9C332720;
+    --gold: #8C6A1D;
+    --gold-soft: #8C6A1D20;
+    --full: #33684A;
+    --full-soft: #33684A20;
+    --stale: #9C5A17;
+    --stale-soft: #9C5A1720;
     --radius: 10px;
   }
   *{box-sizing:border-box;}
@@ -56,7 +58,7 @@
     font-size: 30px;
     letter-spacing: -0.5px;
     margin: 0 0 6px;
-    color: #f3e9d6;
+    color: var(--text);
   }
   .title-block p{
     margin:0;
@@ -129,13 +131,13 @@
     border: 1px solid var(--accent);
     color: #fff;
   }
-  .btn-primary:hover{ background:#c4483a; border-color:#c4483a; }
+  .btn-primary:hover{ background:#83291F; border-color:#83291F; }
   .btn-danger{
     background: transparent;
-    border: 1px solid #7a3a1a;
-    color: #e0a468;
+    border: 1px solid var(--stale);
+    color: var(--stale);
   }
-  .btn-danger:hover{ background: #7a3a1a33; border-color: #e0a468; }
+  .btn-danger:hover{ background: var(--stale-soft); border-color: var(--stale); }
 
   .quick-add-box{ display:flex; gap:6px; }
   .quick-add-box input{
@@ -185,7 +187,7 @@
     font-family: inherit;
     font-weight:700;
     font-size: 18px;
-    color: #f3e9d6;
+    color: var(--text);
   }
   .icon-btn{
     background:none;
@@ -312,13 +314,13 @@
   .pip.active{
     background: var(--gold);
     border-color: var(--gold);
-    color: #1a1405;
+    color: #fff;
     font-weight:700;
   }
   .pip.active.sub{
     background: var(--text-faint);
     border-color: var(--text-faint);
-    color: #10141b;
+    color: var(--text);
   }
 
   .tactic-toggle{
@@ -343,7 +345,7 @@
   .tactic-btn.active-sub{
     background: var(--accent-soft);
     border-color: var(--accent);
-    color: #e08979;
+    color: var(--accent);
   }
 
   /* ---------- modal ---------- */
@@ -476,7 +478,7 @@
     font-family: inherit;
     font-weight:700;
     font-size: 13.5px;
-    color: #f3e9d6;
+    color: var(--text);
     margin-bottom: 8px;
     padding-bottom: 7px;
     border-bottom: 1px solid var(--border-soft);
@@ -511,7 +513,7 @@
   .storage-warning{
     background: var(--accent-soft);
     border: 1px solid var(--accent);
-    color: #f3d9d4;
+    color: var(--accent);
     border-radius: 10px;
     padding: 12px 16px;
     font-size: 13px;
@@ -533,7 +535,7 @@ header{
     font-size: 28px;
     letter-spacing: -0.5px;
     margin: 0 0 6px;
-    color: #f3e9d6;
+    color: var(--text);
   }
   .title-block p{
     margin:0;
@@ -545,9 +547,9 @@ header{
   .stat .num{ font-weight:700; font-size:20px; line-height:1; }
   .stat .num.high{ color: var(--gold); }
   .stat .num.mid{ color: var(--full); }
-  .stat .num.low{ color: #d98d7f; }
+  .stat .num.low{ color: var(--accent); }
   .stat .num.unreg{ color: var(--text-faint); }
-  .stat .num.stale{ color: #e0a468; }
+  .stat .num.stale{ color: var(--stale); }
   .stat .label{ font-size:11px; color: var(--text-faint); margin-top:4px; }
 
   /* ---------- toolbar ---------- */
@@ -584,7 +586,7 @@ header{
   }
   .btn:hover{ border-color: var(--gold); }
   .btn-primary{ background: var(--accent); border: 1px solid var(--accent); color: #fff; }
-  .btn-primary:hover{ background:#c4483a; border-color:#c4483a; }
+  .btn-primary:hover{ background:#83291F; border-color:#83291F; }
 
   .view-tabs{ display:flex; gap:4px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:3px; }
   .view-tab{
@@ -610,10 +612,10 @@ header{
   .filter-pill.active{ border-color: var(--text); color: var(--text); background: var(--surface); }
   .filter-pill.tier-high.active{ border-color: var(--gold); color: var(--gold); }
   .filter-pill.tier-mid.active{ border-color: var(--full); color: var(--full); }
-  .filter-pill.tier-low.active{ border-color: var(--accent); color: #d98d7f; }
+  .filter-pill.tier-low.active{ border-color: var(--accent); color: var(--accent); }
   .filter-pill.tier-unregistered.active{ border-color: var(--text-faint); color: var(--text-faint); }
   .filter-pill.stale-pill{ margin-left: auto; }
-  .filter-pill.stale-pill.active{ border-color: #e0a468; color: #e0a468; background: #7a3a1a33; }
+  .filter-pill.stale-pill.active{ border-color: var(--stale); color: var(--stale); background: var(--stale-soft); }
 
   /* ---------- empty ---------- */
   .empty{
@@ -630,21 +632,21 @@ header{
   .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
   .card{ background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 17px 14px; }
   .card-head{ display:flex; align-items:center; gap:8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
-  .card-head .nickname{ font-weight:700; font-size: 16.5px; color: #f3e9d6; }
+  .card-head .nickname{ font-weight:700; font-size: 16.5px; color: var(--text); }
   .tier-badge{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; }
   .tier-badge.tier-high{ background: var(--gold-soft); color: var(--gold); }
   .tier-badge.tier-mid{ background: var(--full-soft); color: var(--full); }
-  .tier-badge.tier-low{ background: var(--accent-soft); color: #d98d7f; }
+  .tier-badge.tier-low{ background: var(--accent-soft); color: var(--accent); }
   .tier-badge.tier-unreg{ background: var(--surface-2); color: var(--text-faint); }
   .stale-badge{
     font-size:10.5px;
     font-weight:700;
     padding:3px 8px;
     border-radius:20px;
-    background: #7a3a1a33;
-    color: #e0a468;
+    background: var(--stale-soft);
+    color: var(--stale);
   }
-  .card-stale{ border-color: #7a3a1a; }
+  .card-stale{ border-color: var(--stale); }
   .icon-btn{ margin-left:auto; background:none; color: var(--text-faint); font-size: 17px; line-height:1; padding: 2px 6px; border-radius: 6px; }
   .icon-btn:hover{ color: var(--accent); background: var(--surface-2); }
 
@@ -662,7 +664,7 @@ header{
   .field .m-label{ font-size: 10px; color: var(--text-faint); margin-bottom:5px; }
   .pips{ display:flex; gap:3px; flex-wrap:wrap; }
   .pip{ width: 19px; height: 19px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-faint); font-size: 9.5px; display:flex; align-items:center; justify-content:center; padding:0; }
-  .pip.active{ background: var(--gold); border-color: var(--gold); color: #1a1405; font-weight:700; }
+  .pip.active{ background: var(--gold); border-color: var(--gold); color: #fff; font-weight:700; }
 
   .level-field{ display:flex; align-items:center; gap:6px; }
   .level-btn{ width:22px; height:22px; border-radius:6px; background: var(--surface); border:1px solid var(--border); color: var(--text-muted); font-size:13px; line-height:1; }
@@ -677,7 +679,7 @@ header{
   /* ---------- summary boxes ---------- */
   .summary-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
   .summary-box{ background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-  .summary-head{ display:flex; align-items:center; gap:8px; font-weight:700; font-size: 13.5px; color: #f3e9d6; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--border-soft); }
+  .summary-head{ display:flex; align-items:center; gap:8px; font-weight:700; font-size: 13.5px; color: var(--text); margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--border-soft); }
   .summary-line{ display:flex; align-items:center; gap: 8px; font-size: 12px; padding: 3px 0; }
   .summary-line .s-role{ flex-shrink:0; width: 36px; color: var(--text-faint); font-size: 10.5px; }
   .summary-line .s-name{ flex:1; color: var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -734,26 +736,29 @@ header{
 
   .loading{ text-align:center; padding: 80px 0; color: var(--text-muted); font-size: 14px; }
 
-  .storage-warning{ background: var(--accent-soft); border: 1px solid var(--accent); color: #f3d9d4; border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 22px; }
+  .storage-warning{ background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; padding: 12px 16px; font-size: 13px; line-height: 1.5; margin-bottom: 22px; }
 
   /* ---------- hub / home page ---------- */
   .hub-wrap{ max-width: 720px; margin: 0 auto; padding: 80px 24px; }
   .hub-header{ text-align:center; margin-bottom: 40px; }
-  .hub-header h1{ font-weight:800; font-size: 30px; color: #f3e9d6; margin: 0 0 8px; letter-spacing:-0.5px; }
+  .hub-header h1{ font-weight:800; font-size: 30px; color: var(--text); margin: 0 0 8px; letter-spacing:-0.5px; }
   .hub-header p{ color: var(--text-muted); font-size: 14px; margin:0; }
   .hub-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   .hub-card{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-left: 4px solid var(--border);
+    border-radius: 10px;
     padding: 28px 22px;
     text-align: left;
     color: var(--text);
-    transition: border-color .15s ease, transform .15s ease;
+    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
   }
-  .hub-card:hover{ border-color: var(--gold); transform: translateY(-2px); }
-  .hub-icon{ font-size: 30px; margin-bottom: 14px; }
-  .hub-title{ font-weight:700; font-size: 17px; color: #f3e9d6; margin-bottom: 8px; }
+  .hub-card.tracker:hover{ border-left-color: var(--accent); }
+  .hub-card.growth:hover{ border-left-color: var(--full); }
+  .hub-card:hover{ transform: translateY(-2px); box-shadow: 0 8px 20px -12px rgba(34,31,27,0.25); }
+  .hub-icon{ font-size: 26px; margin-bottom: 14px; }
+  .hub-title{ font-weight:700; font-size: 17px; color: var(--text); margin-bottom: 8px; }
   .hub-desc{ font-size: 12.5px; color: var(--text-muted); line-height:1.5; }
   @media (max-width: 560px){
     .hub-grid{ grid-template-columns: 1fr; }
@@ -1452,8 +1457,8 @@ function avgLevelOf(snap){
   return snap.generals.reduce((s, g) => s + (g.level || 0), 0) / snap.generals.length;
 }
 function tierOf(avgProm){
-  if (avgProm >= 5) return 'high';
-  if (avgProm >= 3) return 'mid';
+  if (avgProm >= 4) return 'high';
+  if (avgProm >= 2) return 'mid';
   return 'low';
 }
 
@@ -1840,29 +1845,29 @@ function renderGrowthChart(){
   for (let v = 0; v <= maxV + step * 0.001; v += step){
     const y = yFor(v);
     if (y < padT - 0.5) break; // zoomed-in view: skip ticks above the visible window
-    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#232b38" stroke-width="1" />`;
-    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#5c6779">${v.toFixed(decimals)}</text>`;
+    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#E3DDCF" stroke-width="1" />`;
+    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#8A8371">${v.toFixed(decimals)}</text>`;
   }
   const labelCount = Math.min(6, hours.length);
   let xLabelsHtml = '';
   for (let i=0; i<labelCount; i++){
     const idx = Math.round(i * (hours.length - 1) / Math.max(1, labelCount - 1));
     const h = hours[idx];
-    xLabelsHtml += `<text x="${xFor(h).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#5c6779">${formatHourLabel(h)}</text>`;
+    xLabelsHtml += `<text x="${xFor(h).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#8A8371">${formatHourLabel(h)}</text>`;
   }
 
   container.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
       ${gridHtml}
       ${xLabelsHtml}
-      ${pathAndDots(high, xFor, yFor, '#c9a227')}
-      ${pathAndDots(mid, xFor, yFor, '#4c8c6b')}
-      ${pathAndDots(low, xFor, yFor, '#b7402f')}
+      ${pathAndDots(high, xFor, yFor, '#8C6A1D')}
+      ${pathAndDots(mid, xFor, yFor, '#33684A')}
+      ${pathAndDots(low, xFor, yFor, '#9C3327')}
     </svg>
     <div class="chart-legend">
-      <span class="legend-item"><i style="background:#c9a227"></i>고진급 (평균치)</span>
-      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급 (평균치)</span>
-      <span class="legend-item"><i style="background:#b7402f"></i>저진급 (평균치)</span>
+      <span class="legend-item"><i style="background:#8C6A1D"></i>고진급 (평균치)</span>
+      <span class="legend-item"><i style="background:#33684A"></i>중진급 (평균치)</span>
+      <span class="legend-item"><i style="background:#9C3327"></i>저진급 (평균치)</span>
       <button class="chart-detail-toggle ${growthChartDetail ? 'on' : ''}" onclick="growthChartToggleDetail()">${growthChartDetail ? '기준선 세밀히 보는 중' : '기준선 세밀히 보기'}</button>
     </div>
   `;
@@ -1929,12 +1934,12 @@ function renderTerritoryChart(){
   for (let v = 0; v <= niceMax + 0.001; v += step){
     const y = yFor(v);
     const label = percentMode ? Math.round(v) + '%' : Math.round(v);
-    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#232b38" stroke-width="1" />`;
-    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#5c6779">${label}</text>`;
+    gridHtml += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="#E3DDCF" stroke-width="1" />`;
+    gridHtml += `<text x="${padL-8}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="#8A8371">${label}</text>`;
   }
 
   let barsHtml = '', xLabelsHtml = '';
-  const tierColors = [['high','#c9a227'], ['mid','#4c8c6b'], ['low','#b7402f']];
+  const tierColors = [['high','#8C6A1D'], ['mid','#33684A'], ['low','#9C3327']];
   levels.forEach((lvl, i) => {
     const groupX = padL + i * groupW;
     tierColors.forEach(([tier, color], j) => {
@@ -1952,7 +1957,7 @@ function renderTerritoryChart(){
         barsHtml += `<text x="${(barX+barWidth/2).toFixed(1)}" y="${(barY-4).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="${color}">${rawCount}</text>`;
       }
     });
-    xLabelsHtml += `<text x="${(groupX+groupW/2).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#5c6779">Lv.${lvl}</text>`;
+    xLabelsHtml += `<text x="${(groupX+groupW/2).toFixed(1)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#8A8371">Lv.${lvl}</text>`;
   });
 
   const tableRows = levels.map(lvl => {
@@ -1971,9 +1976,9 @@ function renderTerritoryChart(){
       ${xLabelsHtml}
     </svg>
     <div class="chart-legend">
-      <span class="legend-item"><i style="background:#c9a227"></i>고진급 (${tierTotals.high}명)</span>
-      <span class="legend-item"><i style="background:#4c8c6b"></i>중진급 (${tierTotals.mid}명)</span>
-      <span class="legend-item"><i style="background:#b7402f"></i>저진급 (${tierTotals.low}명)</span>
+      <span class="legend-item"><i style="background:#8C6A1D"></i>고진급 (${tierTotals.high}명)</span>
+      <span class="legend-item"><i style="background:#33684A"></i>중진급 (${tierTotals.mid}명)</span>
+      <span class="legend-item"><i style="background:#9C3327"></i>저진급 (${tierTotals.low}명)</span>
     </div>
     <table class="territory-table">
       <thead><tr><th>토지 레벨</th><th>고진급</th><th>중진급</th><th>저진급</th><th>합계</th></tr></thead>
@@ -2170,12 +2175,12 @@ function renderHome(){
         <p>원하는 도구를 선택하세요.</p>
       </div>
       <div class="hub-grid">
-        <button class="hub-card" onclick="navigateTo('tracker')">
+        <button class="hub-card tracker" onclick="navigateTo('tracker')">
           <div class="hub-icon">🗡️</div>
           <div class="hub-title">맹원 덱 조사부</div>
           <div class="hub-desc">주장·부장 진급, 컬렉션·이미지 보유, 전법 완성도를 관리합니다.</div>
         </button>
-        <button class="hub-card" onclick="navigateTo('growth')">
+        <button class="hub-card growth" onclick="navigateTo('growth')">
           <div class="hub-icon">🌱</div>
           <div class="hub-title">개척덱 성장 현황</div>
           <div class="hub-desc">개척덱 성장을 시간대별로 기록하고 그룹별 추이를 확인합니다.</div>
